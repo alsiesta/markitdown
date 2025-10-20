@@ -1,4 +1,5 @@
 # MarkItDown
+#### **Alsiesta's** überarbeitete Version von . Inkl. UTF-8 und Emoji Erkennung
 
 [![PyPI](https://img.shields.io/pypi/v/markitdown.svg)](https://pypi.org/project/markitdown/)
 ![PyPI - Downloads](https://img.shields.io/pypi/dd/markitdown)
@@ -7,242 +8,250 @@
 > [!TIP]
 > MarkItDown now offers an MCP (Model Context Protocol) server for integration with LLM applications like Claude Desktop. See [markitdown-mcp](https://github.com/microsoft/markitdown/tree/main/packages/markitdown-mcp) for more information.
 
-> [!IMPORTANT]
-> Breaking changes between 0.0.1 to 0.1.0:
-> * Dependencies are now organized into optional feature-groups (further details below). Use `pip install 'markitdown[all]'` to have backward-compatible behavior. 
-> * convert\_stream() now requires a binary file-like object (e.g., a file opened in binary mode, or an io.BytesIO object). This is a breaking change from the previous version, where it previously also accepted text file-like objects, like io.StringIO.
-> * The DocumentConverter class interface has changed to read from file-like streams rather than file paths. *No temporary files are created anymore*. If you are the maintainer of a plugin, or custom DocumentConverter, you likely need to update your code. Otherwise, if only using the MarkItDown class or CLI (as in these examples), you should not need to change anything.
+MarkItDown is a lightweight Python utility for converting various files to Markdown for use with LLMs and related text analysis pipelines. With enhanced multi-language support, it preserves important document structure and content as Markdown, including headings, lists, tables, links, and proper character encoding for international documents.
 
-MarkItDown is a lightweight Python utility for converting various files to Markdown for use with LLMs and related text analysis pipelines. To this end, it is most comparable to [textract](https://github.com/deanmalmgren/textract), but with a focus on preserving important document structure and content as Markdown (including: headings, lists, tables, links, etc.) While the output is often reasonably presentable and human-friendly, it is meant to be consumed by text analysis tools -- and may not be the best option for high-fidelity document conversions for human consumption.
+## ✨ Key Features
 
-MarkItDown currently supports the conversion from:
+- **🔄 Multi-format Support**: PDF, PowerPoint, Word, Excel, Images, Audio, HTML, and more
+- **🌍 Enhanced International Support**: Improved encoding detection for German, European, and other languages
+- **📝 Smart Structure Preservation**: Maintains document hierarchy, formatting, and semantic structure
+- **🔌 Extensible Plugin System**: Support for 3rd-party plugins and custom converters
+- **🐳 Docker Ready**: Containerized deployment support
+- **🤖 LLM Optimized**: Output designed for consumption by language models
 
-- PDF
-- PowerPoint
-- Word
-- Excel
-- Images (EXIF metadata and OCR)
-- Audio (EXIF metadata and speech transcription)
-- HTML
-- Text-based formats (CSV, JSON, XML)
-- ZIP files (iterates over contents)
-- Youtube URLs
-- EPubs
-- ... and more!
+## Supported File Formats
+
+MarkItDown currently supports conversion from:
+
+- **Documents**: PDF, Word (.docx), PowerPoint (.pptx), Excel (.xlsx, .xls)
+- **Images**: JPEG, PNG, GIF, BMP (with EXIF metadata and OCR)
+- **Audio**: WAV, MP3 (with metadata and speech transcription)
+- **Web**: HTML, EPub, YouTube URLs
+- **Data**: CSV, JSON, XML
+- **Archives**: ZIP files (iterates over contents)
+- **Email**: Outlook messages (.msg)
 
 ## Why Markdown?
 
-Markdown is extremely close to plain text, with minimal markup or formatting, but still
-provides a way to represent important document structure. Mainstream LLMs, such as
-OpenAI's GPT-4o, natively "_speak_" Markdown, and often incorporate Markdown into their
-responses unprompted. This suggests that they have been trained on vast amounts of
-Markdown-formatted text, and understand it well. As a side benefit, Markdown conventions
-are also highly token-efficient.
+Markdown is extremely close to plain text with minimal markup, while still providing a way to represent important document structure. Mainstream LLMs natively understand Markdown and often incorporate it into responses unprompted, suggesting extensive training on Markdown-formatted text. As a bonus, Markdown conventions are highly token-efficient.
 
-## Prerequisites
-MarkItDown requires Python 3.10 or higher. It is recommended to use a virtual environment to avoid dependency conflicts.
+## 🚀 Quick Start
 
-With the standard Python installation, you can create and activate a virtual environment using the following commands:
+### Installation
 
 ```bash
-python -m venv .venv
-source .venv/bin/activate
+# Install with all optional dependencies
+pip install 'markitdown[all]'
+
+# Or install from source
+git clone https://github.com/microsoft/markitdown.git
+cd markitdown
+pip install -e 'packages/markitdown[all]'
 ```
 
-If using `uv`, you can create a virtual environment with:
+### Basic Usage
 
+**Command Line:**
+```bash
+# Convert to stdout
+markitdown document.pdf
+
+# Save to file
+markitdown document.pdf -o output.md
+
+# Pipe content
+cat document.pdf | markitdown
+```
+
+**Python API:**
+```python
+from markitdown import MarkItDown
+
+md = MarkItDown()
+result = md.convert("document.pdf")
+print(result.text_content)
+```
+
+## 📋 Prerequisites
+
+- **Python**: 3.10 or higher
+- **Virtual Environment**: Recommended to avoid dependency conflicts
+
+### Setting up Virtual Environment
+
+**Standard Python:**
+```bash
+python -m venv .venv
+source .venv/bin/activate  # On Windows: .venv\\Scripts\\activate
+```
+
+**Using Powershell**
+```
+.venv/Scripts/activate.ps1
+markitdown document.pdf -o output.md
+```
+
+**Using uv:**
 ```bash
 uv venv --python=3.12 .venv
 source .venv/bin/activate
-# NOTE: Be sure to use 'uv pip install' rather than just 'pip install' to install packages in this virtual environment
 ```
 
-If you are using Anaconda, you can create a virtual environment with:
-
+**Using Conda:**
 ```bash
 conda create -n markitdown python=3.12
 conda activate markitdown
 ```
 
-## Installation
-
-To install MarkItDown, use pip: `pip install 'markitdown[all]'`. Alternatively, you can install it from the source:
-
-```bash
-git clone git@github.com:microsoft/markitdown.git
-cd markitdown
-pip install -e 'packages/markitdown[all]'
-```
-
-## Usage
-
-### Command-Line
-
-```bash
-markitdown path-to-file.pdf > document.md
-```
-
-Or use `-o` to specify the output file:
-
-```bash
-markitdown path-to-file.pdf -o document.md
-```
-
-You can also pipe content:
-
-```bash
-cat path-to-file.pdf | markitdown
-```
+## 🔧 Advanced Configuration
 
 ### Optional Dependencies
-MarkItDown has optional dependencies for activating various file formats. Earlier in this document, we installed all optional dependencies with the `[all]` option. However, you can also install them individually for more control. For example:
+
+Install only what you need:
 
 ```bash
-pip install 'markitdown[pdf, docx, pptx]'
+# PDF support only
+pip install 'markitdown[pdf]'
+
+# Multiple formats
+pip install 'markitdown[pdf,docx,pptx]'
+
+# All available options
+pip install 'markitdown[all]'
 ```
 
-will install only the dependencies for PDF, DOCX, and PPTX files.
+Available dependency groups:
+- `[pdf]` - PDF files
+- `[docx]` - Word documents
+- `[pptx]` - PowerPoint presentations
+- `[xlsx]` - Excel files
+- `[xls]` - Legacy Excel files
+- `[outlook]` - Outlook messages
+- `[az-doc-intel]` - Azure Document Intelligence
+- `[audio-transcription]` - Audio file transcription
+- `[youtube-transcription]` - YouTube video transcription
 
-At the moment, the following optional dependencies are available:
+### Enhanced International Support
 
-* `[all]` Installs all optional dependencies
-* `[pptx]` Installs dependencies for PowerPoint files
-* `[docx]` Installs dependencies for Word files
-* `[xlsx]` Installs dependencies for Excel files
-* `[xls]` Installs dependencies for older Excel files
-* `[pdf]` Installs dependencies for PDF files
-* `[outlook]` Installs dependencies for Outlook messages
-* `[az-doc-intel]` Installs dependencies for Azure Document Intelligence
-* `[audio-transcription]` Installs dependencies for audio transcription of wav and mp3 files
-* `[youtube-transcription]` Installs dependencies for fetching YouTube video transcription
+MarkItDown includes improved encoding detection for international documents, particularly:
 
-### Plugins
+- **German documents**: Automatic handling of ä, ö, ü, ß characters
+- **European languages**: Enhanced Latin-1, CP1252, ISO-8859-1 support
+- **Smart fallback**: Multiple encoding attempts with intelligent selection
 
-MarkItDown also supports 3rd-party plugins. Plugins are disabled by default. To list installed plugins:
+### Plugin System
 
+**List available plugins:**
 ```bash
 markitdown --list-plugins
 ```
 
-To enable plugins use:
-
+**Enable plugins:**
 ```bash
-markitdown --use-plugins path-to-file.pdf
+markitdown --use-plugins document.pdf
 ```
 
-To find available plugins, search GitHub for the hashtag `#markitdown-plugin`. To develop a plugin, see `packages/markitdown-sample-plugin`.
+**Find community plugins:** Search GitHub for `#markitdown-plugin`
 
 ### Azure Document Intelligence
 
-To use Microsoft Document Intelligence for conversion:
+For enhanced PDF processing:
 
 ```bash
-markitdown path-to-file.pdf -o document.md -d -e "<document_intelligence_endpoint>"
+markitdown document.pdf -d -e "<your_document_intelligence_endpoint>"
 ```
 
-More information about how to set up an Azure Document Intelligence Resource can be found [here](https://learn.microsoft.com/en-us/azure/ai-services/document-intelligence/how-to-guides/create-document-intelligence-resource?view=doc-intel-4.0.0)
-
-### Python API
-
-Basic usage in Python:
-
+**Python API with Document Intelligence:**
 ```python
 from markitdown import MarkItDown
 
-md = MarkItDown(enable_plugins=False) # Set to True to enable plugins
-result = md.convert("test.xlsx")
-print(result.text_content)
+md = MarkItDown(docintel_endpoint="<your_endpoint>")
+result = md.convert("document.pdf")
 ```
 
-Document Intelligence conversion in Python:
+### LLM Integration for Images
 
-```python
-from markitdown import MarkItDown
-
-md = MarkItDown(docintel_endpoint="<document_intelligence_endpoint>")
-result = md.convert("test.pdf")
-print(result.text_content)
-```
-
-To use Large Language Models for image descriptions (currently only for pptx and image files), provide `llm_client` and `llm_model`:
+Use Large Language Models for enhanced image descriptions:
 
 ```python
 from markitdown import MarkItDown
 from openai import OpenAI
 
 client = OpenAI()
-md = MarkItDown(llm_client=client, llm_model="gpt-4o", llm_prompt="optional custom prompt")
-result = md.convert("example.jpg")
-print(result.text_content)
+md = MarkItDown(
+    llm_client=client, 
+    llm_model="gpt-4o", 
+    llm_prompt="Describe this image in detail"
+)
+result = md.convert("image.jpg")
 ```
 
-### Docker
+## 🐳 Docker Usage
 
-```sh
+```bash
+# Build image
 docker build -t markitdown:latest .
-docker run --rm -i markitdown:latest < ~/your-file.pdf > output.md
+
+# Convert files
+docker run --rm -i markitdown:latest < document.pdf > output.md
 ```
 
-## Contributing
+## 🏗️ Architecture
 
-This project welcomes contributions and suggestions. Most contributions require you to agree to a
-Contributor License Agreement (CLA) declaring that you have the right to, and actually do, grant us
-the rights to use your contribution. For details, visit https://cla.opensource.microsoft.com.
+MarkItDown uses a modular converter architecture:
 
-When you submit a pull request, a CLA bot will automatically determine whether you need to provide
-a CLA and decorate the PR appropriately (e.g., status check, comment). Simply follow the instructions
-provided by the bot. You will only need to do this once across all repos using our CLA.
+- **Core Engine**: Central conversion orchestration
+- **Format Converters**: Specialized handlers for each file type
+- **Encoding Detection**: Multi-pass character encoding resolution
+- **Plugin System**: Extensible third-party integration
+- **Stream Processing**: Memory-efficient file handling
 
-This project has adopted the [Microsoft Open Source Code of Conduct](https://opensource.microsoft.com/codeofconduct/).
-For more information see the [Code of Conduct FAQ](https://opensource.microsoft.com/codeofconduct/faq/) or
-contact [opencode@microsoft.com](mailto:opencode@microsoft.com) with any additional questions or comments.
+## 🧪 Development
 
-### How to Contribute
+### Running Tests
 
-You can help by looking at issues or helping review PRs. Any issue or PR is welcome, but we have also marked some as 'open for contribution' and 'open for reviewing' to help facilitate community contributions. These are of course just suggestions and you are welcome to contribute in any way you like.
+```bash
+cd packages/markitdown
+pip install hatch
+hatch shell
+hatch test
+```
 
-<div align="center">
+### Code Quality
 
-|            | All                                                          | Especially Needs Help from Community                                                                                                      |
-| ---------- | ------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------- |
-| **Issues** | [All Issues](https://github.com/microsoft/markitdown/issues) | [Issues open for contribution](https://github.com/microsoft/markitdown/issues?q=is%3Aissue+is%3Aopen+label%3A%22open+for+contribution%22) |
-| **PRs**    | [All PRs](https://github.com/microsoft/markitdown/pulls)     | [PRs open for reviewing](https://github.com/microsoft/markitdown/pulls?q=is%3Apr+is%3Aopen+label%3A%22open+for+reviewing%22)              |
+```bash
+# Run pre-commit checks
+pre-commit run --all-files
+```
 
-</div>
+### Creating Plugins
 
-### Running Tests and Checks
+See `packages/markitdown-sample-plugin` for plugin development examples.
 
-- Navigate to the MarkItDown package:
+## 🤝 Contributing
 
-  ```sh
-  cd packages/markitdown
-  ```
+We welcome contributions! Please see our [Contributing Guidelines](CONTRIBUTING.md) for details.
 
-- Install `hatch` in your environment and run tests:
+**Quick contribution areas:**
+- 🐛 [Bug fixes](https://github.com/microsoft/markitdown/issues?q=is%3Aissue+is%3Aopen+label%3A%22open+for+contribution%22)
+- 📝 [Documentation improvements](https://github.com/microsoft/markitdown/pulls?q=is%3Apr+is%3Aopen+label%3A%22open+for+reviewing%22)
+- 🔌 Third-party plugins
+- 🌍 International language support
 
-  ```sh
-  pip install hatch  # Other ways of installing hatch: https://hatch.pypa.io/dev/install/
-  hatch shell
-  hatch test
-  ```
+## 📄 License
 
-  (Alternative) Use the Devcontainer which has all the dependencies installed:
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-  ```sh
-  # Reopen the project in Devcontainer and run:
-  hatch test
-  ```
+## 🔒 Security
 
-- Run pre-commit checks before submitting a PR: `pre-commit run --all-files`
+For security concerns, please see our [Security Policy](SECURITY.md).
 
-### Contributing 3rd-party Plugins
+## 📞 Support
 
-You can also contribute by creating and sharing 3rd party plugins. See `packages/markitdown-sample-plugin` for more details.
+- 📖 [Documentation](https://github.com/microsoft/markitdown)
+- 🐛 [Issue Tracker](https://github.com/microsoft/markitdown/issues)
+- 💬 [Discussions](https://github.com/microsoft/markitdown/discussions)
 
-## Trademarks
+---
 
-This project may contain trademarks or logos for projects, products, or services. Authorized use of Microsoft
-trademarks or logos is subject to and must follow
-[Microsoft's Trademark & Brand Guidelines](https://www.microsoft.com/en-us/legal/intellectualproperty/trademarks/usage/general).
-Use of Microsoft trademarks or logos in modified versions of this project must not cause confusion or imply Microsoft sponsorship.
-Any use of third-party trademarks or logos are subject to those third-party's policies.
+**Built with ❤️ by the Microsoft AutoGen Team**

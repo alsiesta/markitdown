@@ -1,5 +1,15 @@
-.final_clean_version2.md
+# Test files and outputs
+output*.md
+test_output*.md
+*.pdf
+*.docx
+*.pptx
+*.xlsx
+*.xls
 
+# Backup files
+*_original_*.md
+*_backup.*
 
 .vscode
 
