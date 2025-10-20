@@ -6,7 +6,10 @@ from typing import BinaryIO, Any
 
 from .._base_converter import DocumentConverter, DocumentConverterResult
 from .._stream_info import StreamInfo
-from .._exceptions import MissingDependencyException, MISSING_DEPENDENCY_MESSAGE
+from .._exceptions import (
+    MissingDependencyException,
+    MISSING_DEPENDENCY_MESSAGE
+)
 
 
 # Try loading optional (but in this case, required) dependencies
@@ -30,7 +33,8 @@ ACCEPTED_FILE_EXTENSIONS = [".pdf"]
 
 class PdfConverter(DocumentConverter):
     """
-    Converts PDFs to Markdown. Most style information is ignored, so the results are essentially plain-text.
+    Converts PDFs to Markdown. Most style information is ignored,
+    so the results are essentially plain-text.
     """
 
     def accepts(
@@ -72,6 +76,27 @@ class PdfConverter(DocumentConverter):
             )
 
         assert isinstance(file_stream, io.IOBase)  # for mypy
-        return DocumentConverterResult(
-            markdown=pdfminer.high_level.extract_text(file_stream),
-        )
+        
+        # Try different encoding approaches with pdfminer
+        codecs_to_try = ['utf-8', 'latin-1', 'cp1252', 'iso-8859-1']
+        
+        for codec in codecs_to_try:
+            try:
+                file_stream.seek(0)  # Reset stream position
+                extracted_text = pdfminer.high_level.extract_text(
+                    file_stream,
+                    codec=codec
+                )
+                
+                # Check if extraction was successful (no replacement chars)
+                if '�' not in extracted_text:
+                    return DocumentConverterResult(markdown=extracted_text)
+                    
+            except (UnicodeDecodeError, Exception):
+                continue
+        
+        # If all codecs fail, fall back to default extraction
+        file_stream.seek(0)
+        extracted_text = pdfminer.high_level.extract_text(file_stream)
+        
+        return DocumentConverterResult(markdown=extracted_text)
